@@ -42,12 +42,16 @@ module.exports = router;
 
 //user.routes.js
 //-----------------
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const authMiddleware = require("../middlewares/auth.middleware.js");
-const { profile } = require("../controllers/user.controller.js");
-router.get("/profile", authMiddleware, profile);
+const authMiddleware = require('../middlewares/auth.middleware.js');
+const { profile, getUsers, updateProfile, removeProfile } = require('../controllers/user.controller.js');
+router.get('/profile', authMiddleware, profile);
+router.get('/', authMiddleware, getUsers);
+router.put('/profile', authMiddleware, updateProfile);
+router.delete('/profile', authMiddleware, removeProfile);
 module.exports = router;
+
 
 
 
@@ -239,7 +243,6 @@ const helloService = () => {
     return "Hello Hi, tata by by";
 }
 
-
 const registerUser = async (name, email, password) => {
     const existingUser = users.find((user) => user.email === email);
     if (existingUser) {
@@ -247,6 +250,7 @@ const registerUser = async (name, email, password) => {
     }
 
     // hashing the password.
+
     const pass = await hashedPassword(password);
     const newUser = {
         id: Date.now(),
@@ -304,7 +308,41 @@ const users = require("../data/users.js");
 const getUserById = (id) => {
     return users.find((user) => user.id === id);
 }
-module.exports = { getUserById };
+
+const getAllUsers = ()=>{
+    return users
+    }
+
+const updatedUser = (userId, updates) => {
+
+    const user = users.find((user) => user.id === userId);
+
+
+    if (!user) {
+        throw new Error("User not found")
+    }
+
+    if (updates.name.trim()) {
+        user.name = updates.name.trim();
+    }
+    if (updates.email.trim()) {
+        user.email = updates.email.trim();
+    }
+
+
+    return user;
+}
+
+const deleteUser = (userId)=>{
+    const index=users.findIndex((user)=>user.id === userId)
+    if(index===-1){
+        throw new Error("notfound")
+    }
+    users.splice(index,1)
+    return true;
+}
+module.exports = { getUserById, getAllUsers, updatedUser, deleteUser };
+
 
 
 
@@ -334,20 +372,27 @@ module.exports = {
 
 //jwt.util.js
 //---------------
-const bcrypt = require("bcryptjs");
-
-// hashing abc => ksf87r4r2rirgweifgeweig
-const hashedPassword = async (password) => {
-    return await bcrypt.hash(password, 10);
+const jwt = require("jsonwebtoken");
+const secret = process.env.JWT_SECRET;
+// generate token
+const generateToken = (payload) => {
+    return jwt.sign(
+        payload,
+        secret,
+        {
+            expiresIn: "1h"
+        }
+    )
 }
-
-// compare = > convert your password to hash and then compare both the hashed pass
-const comparePassword = async (password, hashedPassword) => {
-    return await bcrypt.compare(password, hashedPassword);
+// verify token
+const verifyToken = (token) => {
+    return jwt.verify(
+        token,
+        secret
+    )
 }
-
 module.exports = {
-    hashedPassword, comparePassword
+    generateToken, verifyToken
 }
 
 
