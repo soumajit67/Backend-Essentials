@@ -86,6 +86,8 @@ module.exports = authMiddleware;
 
 
 
+
+
 //user.middleware.js
 //------------------
 
@@ -96,12 +98,14 @@ module.exports = authMiddleware;
 
 //auh.controller.js
 //---------------------
-
 const { helloService, registerUser, loginUser } = require('../services/auth.service.js');
+
 const hello = (req, res) => {
+
     const data = helloService();
     res.send(data);
 }
+
 const register = async (req, res, next) => {
     try {
         const { name, email, password } = req.body;
@@ -117,6 +121,7 @@ const register = async (req, res, next) => {
         next(error);
     }
 }
+
 const login = async (req, res, next) => {
     try {
 
@@ -128,6 +133,7 @@ const login = async (req, res, next) => {
             success: true,
             loggedInUser
         })
+
     } catch (error) {
         next(error);
     }
@@ -139,9 +145,15 @@ module.exports = { hello, register, login }
 
 
 
+
+
+
+
+
 //user.controller.js
 //-------------------------
-const { getUserById } = require("../services/user.service.js")
+const { getUserById, getAllUsers, updatedUser, deleteUser } = require("../services/user.service.js")
+
 const profile = async (req, res, next) => {
     console.log(req.user.id);
 
@@ -151,7 +163,59 @@ const profile = async (req, res, next) => {
         data: user
     })
 }
-module.exports = { profile }
+
+const getUsers = async (req,res)=>{
+    const users = await getAllUsers();
+    if(!users){
+        res.status(400).json({
+            success:false,
+            message: "user not found"
+        })
+    }
+
+    res.status(200).json({
+        success:true,
+        data:users
+    })
+}
+
+const updateProfile = async (req, res, next) => {
+
+
+    try {
+        const updUser = await updatedUser(req.user.id, req.body);
+        if (!updUser) {
+            res.status(400).json({
+                success: false,
+                message: "user not updated!"
+            })
+        }
+
+        res.status(200).json({
+            success: true,
+            data: updUser
+        })
+
+
+    } catch (error) {
+        new Error(error);
+    }
+}
+const removeProfile = async (req, res, next) => {
+  try {
+    await deleteUser(req.user.id);
+    res.status(200).json({
+      success: true,
+      message: "User deleted successfully."
+    })
+  } catch (err) {
+    next(err);
+  }
+}
+module.exports = { profile, getUsers, updateProfile, removeProfile }
+
+
+
 
 
 
@@ -298,3 +362,12 @@ module.exports = {
 //---------
 PORT=5000
 JWT_SECRET=SOMETHINGSECRET
+
+
+
+
+
+//data/users.js
+//-----------------
+const users = [];
+module.exports = users;
